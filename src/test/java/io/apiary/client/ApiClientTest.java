@@ -81,9 +81,7 @@ public class ApiClientTest {
         PaymentApi paymentApi = apiClient.createPayment(token, createPayment);
 
         // Check  payment
-        Assert.assertNotNull( apiClient.checkPayment(paymentApi)  );
-
-        paymentApi = apiClient.checkPayment(paymentApi);
+        paymentApi = apiClient.checkPayment( paymentApi);
         if (paymentApi != null )
             logger.info("the payment: \n" + paymentApi + "\nhas been correctly issued." );
         else

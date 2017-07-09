@@ -25,6 +25,7 @@ public class Main {
                 //
                 logger.info("authenticate by getting token.");
                 TokenApi token  = apiClient.authenticate(new User(conf.getUsername(), conf.getApikey()));
+                logger.info(token.getToken());
                 //
                 logger.info("add recipient.");
                 RecipientApi recipientApi = apiClient.addRecipient(token.getToken(), "Salvatore" + new Date().getTime());
@@ -39,7 +40,7 @@ public class Main {
                 PaymentApi payment1 = apiClient.createPayment(token.getToken(), createPayment);
                 //
                 logger.info("checking payment");
-                PaymentApi paymentApi = apiClient.checkPayment(payment1);
+                PaymentApi paymentApi = apiClient.checkPayment( payment1);
                 if (paymentApi != null )
                     logger.info("the payment: \n" + paymentApi + "\nhas been correctly issued." );
                 else
@@ -47,7 +48,7 @@ public class Main {
 
 
             } catch (Exception e) {
-                logger.error("An error occurred during the client executions steps!!");
+                logger.error("An error occurred during the client executions steps!!", e);
             }
 
         }

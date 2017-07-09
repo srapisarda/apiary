@@ -4,27 +4,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.apiary.client.dao.*;
 import io.apiary.client.exceptions.ApiaryException;
-import org.apache.http.Consts;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.AbstractHttpEntity;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Salvatore Rapisarda
@@ -57,10 +51,9 @@ class ApiClient {
      * @throws Exception as instance of {@link ApiaryException}
      */
     TokenApi authenticate(User user) throws Exception {
-        URI  uri = new URI( endPoint + "/api/login");
+        URI  uri = new URI( endPoint + "/login");
         HttpPost request = new HttpPost(uri);
-        StringEntity post = new StringEntity( getJson(user));
-        post.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+        StringEntity post = new StringEntity( getJson(user), ContentType.APPLICATION_JSON);
         request.setEntity(post);
         //
         HttpResponse response = client.execute(request);
@@ -81,16 +74,21 @@ class ApiClient {
      * @throws Exception as instance of {@link ApiaryException}
      */
     RecipientApi addRecipient(String token, String name ) throws Exception {
-        URI  uri = new URI( endPoint +"/api/recipients"   );
-        logger.info(uri.toString());
+        URI  uri = new URI( endPoint +"/recipients" );
+        logger.debug(uri.toString());
         HttpPost request = new HttpPost(uri);
-
-        StringEntity postEntity =  new StringEntity(getJson(new RecipientApi(new Recipient(name))) );
-        addContentHeader(postEntity, token);
+        logger.debug("recipient:  " + name);
+//        StringEntity postEntity = new StringEntity(
+//                getJson(new RecipientApi(new Recipient(""))),
+//                ContentType.APPLICATION_JSON);
+        StringEntity postEntity =  new StringEntity("");
+        addAuthorizationHeader(postEntity, token);
         request.setEntity(postEntity);
 
         HttpResponse response = client.execute(request);
         String contentPayload = EntityUtils.toString(response.getEntity());
+
+
         if (response.getStatusLine().getStatusCode() != 201 ) {
             Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload, "adding a recipient");
             logger.error("An error occurred during  adding a recipient!!! " ,e);
@@ -108,11 +106,11 @@ class ApiClient {
      * @throws Exception as instance of {@link ApiaryException}
      */
     PaymentApi createPayment(String token, PaymentApi paymentApi) throws Exception{
-        URI  uri = new URI( endPoint +"/api/payments" );
+        URI  uri = new URI( endPoint +"/payments" );
         HttpPost request = new HttpPost(uri);
 
-        StringEntity postEntity = new StringEntity( getJson(paymentApi));
-        addContentHeader(postEntity, token);
+        StringEntity postEntity = new StringEntity( getJson(paymentApi), ContentType.APPLICATION_JSON );
+        addAuthorizationHeader(postEntity, token);
 
         HttpResponse response = client.execute(request);
         String contentPayload = EntityUtils.toString(response.getEntity());
@@ -133,11 +131,11 @@ class ApiClient {
      * @throws Exception as instance of {@link ApiaryException}
      */
     PaymentApi checkPayment(PaymentApi paymentApi) throws Exception{
-        URI  uri = new URI( endPoint +"/api/payments" );
+        URI  uri = new URI( endPoint +"/payments" );
         HttpPost request = new HttpPost(uri);
 
-        StringEntity postEntity = new StringEntity( getJson(paymentApi));
-        addContentHeader(postEntity, null);
+        StringEntity postEntity = new StringEntity( getJson(paymentApi), ContentType.APPLICATION_JSON);
+        request.setEntity(postEntity);
 
         HttpResponse response = client.execute(request);
         String contentPayload = EntityUtils.toString(response.getEntity());
@@ -157,10 +155,10 @@ class ApiClient {
         return mapper.writeValueAsString(o);
     }
 
-    private void addContentHeader(AbstractHttpEntity entity, String token){
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+    private void addAuthorizationHeader(AbstractHttpEntity entity, String token){
         if ( token != null)
             entity.setContentType(new BasicHeader("Authorization", "Bearer " + token + "") );
+        entity.setContentType(new BasicHeader(HTTP.CONTENT_LEN, "0"));
     }
 
     private Exception createExceptionFromStatus(StatusLine status, String payload, String phase){
