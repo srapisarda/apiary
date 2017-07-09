@@ -27,7 +27,7 @@ public class Main {
                 TokenApi token  = apiClient.authenticate(new User(conf.getUsername(), conf.getApikey()));
                 //
                 logger.info("add recipient.");
-                RecipientApi recipientApi = apiClient.addRecipient(token.getToken(), "Salvatore_" + new Date().getTime());
+                RecipientApi recipientApi = apiClient.addRecipient(token.getToken(), "Salvatore" + new Date().getTime());
                 //
                 logger.info("create payment.");
                 PaymentApi createPayment = new PaymentApi();

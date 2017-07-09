@@ -2,10 +2,7 @@ package io.apiary.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.apiary.client.dao.PaymentApi;
-import io.apiary.client.dao.RecipientApi;
-import io.apiary.client.dao.TokenApi;
-import io.apiary.client.dao.User;
+import io.apiary.client.dao.*;
 import io.apiary.client.exceptions.ApiaryException;
 import org.apache.http.Consts;
 import org.apache.http.HttpResponse;
@@ -25,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,7 +66,7 @@ class ApiClient {
         HttpResponse response = client.execute(request);
         String contentPayload = EntityUtils.toString(response.getEntity());
         if (response.getStatusLine().getStatusCode() != 200 ) {
-            Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload);
+            Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload, "authentication");
             logger.error("An error occurred during the authentication!!! " ,e);
             throw e;
         }
@@ -83,20 +81,18 @@ class ApiClient {
      * @throws Exception as instance of {@link ApiaryException}
      */
     RecipientApi addRecipient(String token, String name ) throws Exception {
-        URI  uri = new URI( endPoint +"/api/recipients" );
+        URI  uri = new URI( endPoint +"/api/recipients"   );
+        logger.info(uri.toString());
         HttpPost request = new HttpPost(uri);
 
-        List<NameValuePair> nvps = new ArrayList<>();
-        nvps.add(new BasicNameValuePair("name", name));
-        UrlEncodedFormEntity postEntity =  new UrlEncodedFormEntity(nvps, Consts.UTF_8);
-
+        StringEntity postEntity =  new StringEntity(getJson(new RecipientApi(new Recipient(name))) );
         addContentHeader(postEntity, token);
         request.setEntity(postEntity);
 
         HttpResponse response = client.execute(request);
         String contentPayload = EntityUtils.toString(response.getEntity());
         if (response.getStatusLine().getStatusCode() != 201 ) {
-            Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload);
+            Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload, "adding a recipient");
             logger.error("An error occurred during  adding a recipient!!! " ,e);
             throw e;
         }
@@ -109,7 +105,7 @@ class ApiClient {
      * @param token a string represented the token key
      * @param paymentApi as instance of {@link PaymentApi}
      * @return an instance of  {@link PaymentApi}
-     * @throws Exception
+     * @throws Exception as instance of {@link ApiaryException}
      */
     PaymentApi createPayment(String token, PaymentApi paymentApi) throws Exception{
         URI  uri = new URI( endPoint +"/api/payments" );
@@ -121,7 +117,7 @@ class ApiClient {
         HttpResponse response = client.execute(request);
         String contentPayload = EntityUtils.toString(response.getEntity());
         if (response.getStatusLine().getStatusCode() != 201 ) {
-            Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload);
+            Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload, "creating payment" );
             logger.error("An error occurred during  creating a payment!!! " ,e);
             throw e;
         }
@@ -134,7 +130,7 @@ class ApiClient {
      *
      * @param paymentApi {@link PaymentApi}
      * @return a {@link PaymentApi}
-     * @throws Exception
+     * @throws Exception as instance of {@link ApiaryException}
      */
     PaymentApi checkPayment(PaymentApi paymentApi) throws Exception{
         URI  uri = new URI( endPoint +"/api/payments" );
@@ -149,7 +145,7 @@ class ApiClient {
             if (response.getStatusLine().getStatusCode() == 422  )
                 return  null;
 
-            Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload);
+            Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload, "checking payment");
             logger.error("An error occurred during  creating a payment!!! " ,e);
             throw e;
 
@@ -164,15 +160,15 @@ class ApiClient {
     private void addContentHeader(AbstractHttpEntity entity, String token){
         entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
         if ( token != null)
-            entity.setContentType(new BasicHeader("Authorization", "Bearer 12345." + token + ".67890") );
+            entity.setContentType(new BasicHeader("Authorization", "Bearer " + token + "") );
     }
 
-    private Exception createExceptionFromStatus(StatusLine status, String payload){
+    private Exception createExceptionFromStatus(StatusLine status, String payload, String phase){
         String msg = " status: " + status.getStatusCode() +
                 " - reason: " + status.getReasonPhrase() +
                 " - payload: " + payload;
-        ApiaryException e =  new ApiaryException( msg);
-        logger.error("An error occurred during the authentication!!! " ,e);
+        ApiaryException e =  new ApiaryException(msg);
+        logger.error("An error occurred during the " + phase + "!!! " ,e);
         return  e;
     }
 
