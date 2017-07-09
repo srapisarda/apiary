@@ -25,7 +25,7 @@ public class Main {
                 //
                 logger.info("authenticate by getting token.");
                 TokenApi token  = apiClient.authenticate(new User(conf.getUsername(), conf.getApikey()));
-                logger.info(token.getToken());
+                logger.debug(token.getToken());
                 //
                 logger.info("add recipient.");
                 RecipientApi recipientApi = apiClient.addRecipient(token.getToken(), "Salvatore" + new Date().getTime());

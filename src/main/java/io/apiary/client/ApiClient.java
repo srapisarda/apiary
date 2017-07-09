@@ -31,6 +31,7 @@ class ApiClient {
     private ObjectMapper mapper = new ObjectMapper();
     private final String endPoint;
 
+
     /**
      * {@link ApiClient} Constructor method
      * This client is based on http://docs.coolpayapi.apiary.io/#reference
@@ -78,16 +79,16 @@ class ApiClient {
         logger.debug(uri.toString());
         HttpPost request = new HttpPost(uri);
         logger.debug("recipient:  " + name);
-//        StringEntity postEntity = new StringEntity(
-//                getJson(new RecipientApi(new Recipient(""))),
-//                ContentType.APPLICATION_JSON);
-        StringEntity postEntity =  new StringEntity("");
-        addAuthorizationHeader(postEntity, token);
+        StringEntity postEntity = new StringEntity(getJson(new RecipientApi(new Recipient(name))),
+                ContentType.APPLICATION_JSON);
+
+        if (!isMock())
+            addAuthorizationHeader(postEntity, token);
+
         request.setEntity(postEntity);
 
         HttpResponse response = client.execute(request);
         String contentPayload = EntityUtils.toString(response.getEntity());
-
 
         if (response.getStatusLine().getStatusCode() != 201 ) {
             Exception e =  createExceptionFromStatus(response.getStatusLine(), contentPayload, "adding a recipient");
@@ -161,6 +162,10 @@ class ApiClient {
         entity.setContentType(new BasicHeader(HTTP.CONTENT_LEN, "0"));
     }
 
+    private boolean isMock(){
+        return ApplicationConf.getInstance().getEnvironment().equals( "mock");
+    }
+
     private Exception createExceptionFromStatus(StatusLine status, String payload, String phase){
         String msg = " status: " + status.getStatusCode() +
                 " - reason: " + status.getReasonPhrase() +
@@ -169,5 +174,6 @@ class ApiClient {
         logger.error("An error occurred during the " + phase + "!!! " ,e);
         return  e;
     }
+
 
 }
